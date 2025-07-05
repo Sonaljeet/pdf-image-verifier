@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>PDF Text Image Verifier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        input[type="file"], button {
+            margin-top: 10px;
+            display: block;
+        }
+        #status {
+            margin-top: 20px;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+<h2>Upload PDF and Image to Compare Text (OCR)</h2>
+<form id="compareForm">
+    <label>Select PDF File:</label>
+    <input type="file" name="pdfFile" accept="application/pdf" required>
+
+    <label>Select Image File:</label>
+    <input type="file" name="imageFile" accept="image/*" required>
+
+    <label>Start Page:</label>
+    <input type="number" name="startPage" min="1" value="1" required>
+
+    <label>End Page:</label>
+    <input type="number" name="endPage" min="1" value="1" required>
+
+    <button type="submit">Verify and Download PDF</button>
+</form>
+
+<p id="status"></p>
+
+<script>
+        document.getElementById("compareForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const form = e.target;
+            const formData = new FormData(form);
+            const status = document.getElementById("status");
+
+            status.textContent = "Processing... Please wait.";
+
+            try {
+                const response = await fetch("/compare-image-text", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error("Server error: " + response.statusText);
+                }
+
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = downloadUrl;
+                a.download = "comparison-result.pdf"; // Ensures download
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+
+                status.textContent = "Download complete!";
+            } catch (err) {
+                console.error(err);
+                status.textContent = "Failed: " + err.message;
+            }
+        });
+    </script>
+</body>
+</html>
