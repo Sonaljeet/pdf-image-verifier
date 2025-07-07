@@ -45,3 +45,13 @@ public class Test {
         return false;
     }
 }
+Set<String> words = Arrays.stream(ocrText.split("[^\\w']+"))
+    .map(this::cleanWord)
+    .filter(w -> !w.isBlank())
+    .filter(w -> !shouldIgnore(w, ignorePatterns))
+    .collect(Collectors.toSet());
+
+private String cleanWord(String word) {
+    return word.toLowerCase().replaceAll("[^a-z0-9']", "");
+}
+
