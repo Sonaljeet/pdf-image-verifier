@@ -8,7 +8,7 @@
             font-family: Arial, sans-serif;
             margin: 40px;
         }
-        input[type="file"], button {
+        input[type="file"], button, input[type="number"], input[type="text"] {
             margin-top: 10px;
             display: block;
         }
@@ -16,6 +16,7 @@
             margin-top: 20px;
             color: green;
         }
+
     </style>
 </head>
 <body>
@@ -33,46 +34,56 @@
     <label>End Page:</label>
     <input type="number" name="endPage" min="1" value="1" required>
 
-    <button type="submit">Verify and Download PDF</button>
+    <label>Ignore Patterns (comma-separated):</label>
+    <input type="text" name="ignorePatterns" placeholder="e.g., Inc,Ltd,Test">
+
+    <label>Image has CashFlow Details:</label>
+    <input type="radio" id="cashflow-yes" name="cashflow_details" value="yes">
+    <label for="cashflow-yes">Yes</label>
+    <input type="radio" id="cashflow-no" name="cashflow_details" value="no">
+    <label for="cashflow-no">No</label><br><br>
+
+    <button type="submit">Verify and Download Comparison Result</button>
 </form>
 
 <p id="status"></p>
 
 <script>
-        document.getElementById("compareForm").addEventListener("submit", async function (e) {
-            e.preventDefault();
+    document.getElementById("compareForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
 
-            const form = e.target;
-            const formData = new FormData(form);
-            const status = document.getElementById("status");
+        const form = e.target;
+        const formData = new FormData(form);
+        const status = document.getElementById("status");
 
-            status.textContent = "Processing... Please wait.";
+        status.textContent = "Processing... Please wait.";
 
-            try {
-                const response = await fetch("/compare-image-text", {
-                    method: "POST",
-                    body: formData
-                });
+        try {
+            const response = await fetch("/compare-png", {
+                method: "POST",
+                body: formData
+            });
 
-                if (!response.ok) {
-                    throw new Error("Server error: " + response.statusText);
-                }
-
-                const blob = await response.blob();
-                const downloadUrl = window.URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = downloadUrl;
-                a.download = "comparison-result.pdf"; // Ensures download
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-
-                status.textContent = "Download complete!";
-            } catch (err) {
-                console.error(err);
-                status.textContent = "Failed: " + err.message;
+            if (!response.ok) {
+                throw new Error("Server error: " + response.statusText);
             }
-        });
-    </script>
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = downloadUrl;
+            a.download = "comparison-result.png";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+
+            status.textContent = "Download complete!";
+        } catch (err) {
+            console.error(err);
+            status.textContent = "Failed: " + err.message;
+        }
+    });
+
+</script>
 </body>
 </html>
