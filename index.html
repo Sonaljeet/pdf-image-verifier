@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>PDF & Image Text Verifier</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        textarea { width: 100%; height: 150px; }
+        .result { white-space: pre-wrap; background: #eee; border: 1px solid #ccc; padding: 10px; margin-top: 10px;}
+        .tab {
+          overflow: hidden;
+          border-bottom: 1px solid #ccc;
+        }
+        .tab button {
+          background-color: inherit;
+          border: none;
+          outline: none;
+          cursor: pointer;
+          padding: 14px 16px;
+          transition: 0.3s;
+          font-size: 17px;
+        }
+        .tab button:hover {
+          background-color: #ddd;
+        }
+        .tab button.active {
+          background-color: #ccc;
+        }
+        .tabcontent {
+          display: none;
+          padding: 12px;
+          border: 1px solid #ccc;
+          border-top: none;
+        }
+    </style>
+</head>
+<body>
+
+<h2>PDF & Image Text Verifier</h2>
+
+<div class="tab">
+    <button class="tablinks" onclick="openTab(event, 'pdfText')" id="defaultOpen">PDF Text Extraction & Compare</button>
+    <button class="tablinks" onclick="openTab(event, 'imageTextCompare')">Image to PDF OCR Compare</button>
+</div>
+
+<div id="pdfText" class="tabcontent">
+    <h3>Extract Text from PDF</h3>
+    <form method="post" enctype="multipart/form-data" th:action="@{/extract-text}">
+        <input type="file" name="pdfFile" accept="application/pdf" required>
+        <button type="submit">Extract Text</button>
+    </form>
+
+    <h3>Extract Image Text from PDF</h3>
+    <form method="post" enctype="multipart/form-data" th:action="@{/extract-image-text}">
+        <input type="file" name="pdfFile" accept="application/pdf" required>
+        <button type="submit">Extract Image Text (OCR)</button>
+    </form>
+
+    <h3>Compare Two Texts</h3>
+    <form method="post" th:action="@{/compare-texts}">
+        <label>Text 1:</label><br>
+        <textarea name="text1" th:text="${pdfText}"></textarea><br>
+        <label>Text 2:</label><br>
+        <textarea name="text2" th:text="${imageText}"></textarea><br>
+        <label>Ignore Patterns (comma or newline separated regex):</label><br>
+        <textarea name="ignorePatterns" rows="3" placeholder="[\\W\\d]+"></textarea><br>
+        <button type="submit">Compare</button>
+    </form>
+    <div class="result" th:text="${compareResult}"></div>
+
+    <h3>Verify Multiple Text Presence</h3>
+    <form method="post" th:action="@{/verify-multiple-text}">
+        <label>PDF Extracted Text:</label><br>
+        <textarea name="pdfText" th:text="${pdfText}"></textarea><br>
+        <label>OCR Text:</label><br>
+        <textarea name="ocrText" th:text="${imageText}"></textarea><br>
+        <label>Comma-separated Text to Verify:</label><br>
+        <textarea name="userInput" rows="2" placeholder="term1, term2, term3"></textarea><br>
+        <label>Ignore Patterns (comma or newline separated regex):</label><br>
+        <textarea name="ignorePatterns" rows="2" placeholder="[\\W\\d]+"></textarea><br>
+        <button type="submit">Verify</button>
+    </form>
+    <div class="result" th:text="${verifyResult}"></div>
+</div>
+
+<div id="imageTextCompare" class="tabcontent">
+    <h3>Upload Image and PDF for OCR Comparison with Highlight</h3>
+    <form id="compareForm" enctype="multipart/form-data">
+        <label>Upload Image (PNG/JPG):</label><br>
+        <input type="file" id="imageFile" name="imageFile" accept="image/png,image/jpeg" required><br>
+        <label>Upload PDF:</label><br>
+        <input type="file" id="pdfFile" name="pdfFile" accept="application/pdf" required><br>
+        <label>Start Page:</label><br>
+        <input type="number" id="startPage" name="startPage" value="1" min="1"><br>
+        <label>End Page:</label><br>
+        <input type="number" id="endPage" name="endPage" value="1" min="1"><br>
+        <label>Ignore Patterns (comma or newline separated regex):</label><br>
+        <textarea id="ignorePatterns" name="ignorePatterns" rows="2" placeholder="[\\W\\d]+"></textarea><br>
+        <label>Cash Flow Details (optional):</label><br>
+        <input type="text" id="cashFlowDetails" name="cashFlowDetails"><br><br>
+        <button type="button" onclick="submitCompare()">Compare and Highlight</button>
+    </form>
+    <h3>Result Image:</h3>
+    <img id="resultImage" style="max-width: 100%; border: 1px solid #ccc;" />
+</div>
+
+<script>
+function openTab(evt, tabName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for(i=0;i<tabcontent.length;i++){
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for(i=0;i<tablinks.length;i++){
+    tablinks[i].className = tablinks[i].className.replace(" active","");
+  }
+  document.getElementById(tabName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+document.getElementById("defaultOpen").click();
+
+function submitCompare() {
+    const form = document.getElementById('compareForm');
+    const formData = new FormData(form);
+    const img = document.getElementById('resultImage');
+
+    fetch('/compare-png', {
+        method: 'POST',
+        body: formData
+    }).then(response => {
+        if(!response.ok) throw new Error("HTTP error " + response.status);
+        return response.blob();
+    }).then(blob => {
+        img.src = URL.createObjectURL(blob);
+    }).catch(e => alert("Error: " + e.message));
+}
+</script>
+
+</body>
+</html>
